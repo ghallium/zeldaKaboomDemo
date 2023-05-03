@@ -49,12 +49,12 @@ kaboom({
 
     'aaaaaaaaaaaaaaaa',
     'a  &        @  a',
-    'a      x       a',
+    'a              a',
     'a              a',
     'a  a      > a  a',
     'a  a    }   a  a',
     'a  a        a  |',
-    'a  a     k  a  a',
+    'a  a        a  a',
     'a  a        a  a',
     'a  a        a  a',
     'a  a}       a  a',
@@ -79,7 +79,7 @@ kaboom({
         '&': () => [sprite("left-statue"), area(), solid()],
         '@': () => [sprite("right-statue"), area(), solid() ],
         '>': () => [sprite("downstairs"), 'next-level'],
-        'x': () => [sprite("bomb")],
+        'x': () => [sprite("bomb"), area()],
         'k': () => [sprite("key"), area(), solid()],
 
     }
@@ -105,6 +105,7 @@ kaboom({
     add([
       text("Bombs : " + numberOfBombs), //
       pos(200, 230),
+      layer("ui"),
       scale(0.7),
     ]);
 
@@ -177,6 +178,24 @@ kaboom({
       }
     });
 
+    // Items 
+
+    let bomb = add([
+      sprite("bomb"),
+      pos(30, 100),
+      area(),
+      solid(),
+      'bomb'
+    ])
+
+    let key = add([
+      sprite("key"),
+      pos(100, 150),
+      area(),
+      solid(),
+      'key'
+    ])
+
     // Collisions
 
     player.onCollide("next-level", () => {
@@ -186,10 +205,17 @@ kaboom({
       });
     });
 
-    player.onCollide("bomb", (b) => {
-      numberOfBombs.value++;
+    player.onCollide('bomb', (b) => {
       destroy(b);
-    });
+      numberOfBombs++;
+      
+    })
+
+    player.onCollide('key', (k) => {
+      destroy(k)
+      numberOfKeys++;
+      
+    })
 
     onCollide('boom', 'skeleton', (b,s) => {
       
