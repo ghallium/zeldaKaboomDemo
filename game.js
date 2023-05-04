@@ -11,8 +11,10 @@ kaboom({
   const MOVE_SPEED = 50;
   const SLICER_SPEED = 100
   const SKELETOR_SPEED = 60;
-  let numberOfKeys = 0;
-  let numberOfBombs = 0;
+  const SNAKE_SPEED = 60;
+  let numKeys = 0;
+  let numBombs = 0;
+  
   
 
   // Assets loading
@@ -26,15 +28,18 @@ kaboom({
   loadSprite('skeleton', 'sprites/skeleton.png');
   loadSprite('block', 'sprites/block.png');
   loadSprite('bg', 'sprites/bg.png')
-  loadSprite('right-door', 'sprites/right-door.png')
+  loadSprite('locked-door1', 'sprites/locked-door1.png')
+  loadSprite('locked-door2', 'sprites/locked-door2.png')
   loadSprite('left-statue', 'sprites/left-statue.png')
   loadSprite('right-statue', 'sprites/right-statue.png')
   loadSprite('downstairs', 'sprites/downstairs.png')
+  loadSprite('upstairs', 'sprites/upstairs.png')
   loadSprite('slicer', 'sprites/slicer.png')
   loadSprite('sword-right', 'sprites/sword-right.png')
   loadSprite('key', 'sprites/key.png')
   loadSprite('bomb', 'sprites/bomb.png')
   loadSprite('boom', 'sprites/boom.png')
+  loadSprite('snake', 'sprites/snake.png')
 
   
 
@@ -44,17 +49,17 @@ kaboom({
 
     // Maps 
 
-    const maps = 
+    const maps = [
     [
 
     'aaaaaaaaaaaaaaaa',
     'a  &        @  a',
-    'a              a',
+    'a    x         a',
     'a              a',
     'a  a      > a  a',
     'a  a    }   a  a',
     'a  a        a  |',
-    'a  a        a  a',
+    'a  a        a  )',
     'a  a        a  a',
     'a  a        a  a',
     'a  a}       a  a',
@@ -63,7 +68,27 @@ kaboom({
     'a  &       @   a',
     'aaaaaaaaaaaaaaaa',
 
-    ];
+    ],
+    [
+
+    'aaaaaaaaaaaaaaaa',
+    'a&            @a',
+    'a <            a',
+    'a              a',
+    'a  aaaaaaaaaa  a',
+    'a  a$       a  a',
+    'a  a        a  a',
+    'a  a   k    a  a',
+    'a  a        a  a',
+    'a  a       $a  a',
+    'a  aa      aa  a',
+    'a              a',
+    'a          è   a',
+    'a&            @a',
+    'aaaaaaaaaaaaaaaa',
+  
+      ],
+    ];  
      
 
   // Configuration des niveaux
@@ -71,24 +96,36 @@ kaboom({
     const levelCfg = {
         width: 16,
         height: 16,
-        'a': () => [sprite('block'), area(), solid()],
+        'a': () => [sprite('block'), 'wall', area(), solid()],
         '}': () => [sprite('skeleton'), 'skeleton', 'dangerous', area(), solid(), {dir: -1, timer: 0}],
-       
-        'è': () => [sprite('slicer'), 'slicer', 'dangerous', area(), solid(), {dir: -1}],
-        '|': () => [sprite("right-door")],
+        'x': () => [sprite('bomb'), area(), solid(), 'bomb'],
+        'k': () => [sprite('key'), area(), solid(), 'key'],        
+        'è': () => [sprite('slicer'), 'slicer', 'dangerous', area(), {dir: -1}],
+        '$': () => [sprite('snake'), 'snake', 'dangerous', area(), {dir: -1}],
+        '|': () => [sprite("locked-door1"), area(), solid()],
+        ')': () => [sprite("locked-door2")],
         '&': () => [sprite("left-statue"), area(), solid()],
         '@': () => [sprite("right-statue"), area(), solid() ],
-        '>': () => [sprite("downstairs"), 'next-level'],
-        'x': () => [sprite("bomb"), area()],
-        'k': () => [sprite("key"), area(), solid()],
+        '<': () => [sprite("upstairs"), area(), 'previous-level' ],
+        '>': () => [sprite("downstairs"), area(), 'next-level'],
+        
 
     }
-    addLevel(maps, levelCfg);
+    addLevel(maps[level], levelCfg);
     
     // UI
 
     const scoreLabel = add([
       text("0"),
+      pos(200, 180),
+      layer("ui"),
+      { value: score },
+      // { value: 2 },
+      scale(0.7),
+    ]);
+
+    const keysLabel = add([
+      text("Keys : "),
       pos(200, 200),
       layer("ui"),
       { value: score },
@@ -96,21 +133,21 @@ kaboom({
       scale(0.7),
     ]);
   
-    add([
-      text("level " + parseInt(level + 1)), //
+    const levelLabel = add([
+      text("Room " + parseInt(level + 1)), //
       pos(200, 215),
       scale(0.7),
     ]);
 
-    add([
-      text("Bombs : " + numberOfBombs), //
+    const bombsLabel = add([
+      text("Bombs : "), //
       pos(200, 230),
       layer("ui"),
       scale(0.7),
     ]);
 
     
-    
+    // Fond
 
     add([sprite('bg'), layer('bg')])
      
@@ -162,12 +199,51 @@ kaboom({
       spawnKaboom(player.pos.add(player.dir.scale(12)))
     })
 
+    // Ramasser objets 
+
+    function addKey() {
+      numKeys++;
+      keysLabel.text = 'Keys : ${numKeys}';
+    }
+
+    function addBomb() {
+      numKeys++;
+      bombsLabel.text = 'Bombs : ${numBombs}';
+    }
+
+    function removeKey() {
+      numKeys--;
+      keysLabel.text = 'Keys : ${numKeys}';
+    }
+
+    function removeBomb() {
+      numBombs--;
+      bombsLabel.text = 'Bombs : ${numBombs}';
+    }
+
+    // Ouvrir porte 
+
+
+
     // Ennemis
 
     onUpdate('slicer', (s) => {
       
       s.move(s.dir * SLICER_SPEED, 0)
     });
+
+    onCollide('slicer', 'wall', (s) => {
+      s.dir = -s.dir
+    })
+
+    onUpdate('snake', (s) => {
+      
+      s.move(s.dir * SNAKE_SPEED, 0)
+    });
+
+    onCollide('snake', 'wall', (s) => {
+      s.dir = -s.dir
+    })
 
     onUpdate('skeleton', (s) => {
       s.move(0, s.dir * SKELETOR_SPEED)
@@ -178,46 +254,58 @@ kaboom({
       }
     });
 
-    // Items 
-
-    let bomb = add([
-      sprite("bomb"),
-      pos(30, 100),
-      area(),
-      solid(),
-      'bomb'
-    ])
-
-    let key = add([
-      sprite("key"),
-      pos(100, 150),
-      area(),
-      solid(),
-      'key'
-    ])
+    player.onCollide('locked-door1', (l) => {
+      
+      if(numKeys = 0) {
+        add([
+          text('You need a key to open that door'),
+          pos(20, 200)
+        ])
+      }
+    })
 
     // Collisions
 
-    player.onCollide("next-level", () => {
+    player.onCollide('next-level', () => {
       go("game", {
-        level: (level + 1) % maps.length,
+        level: (level + 1),
         score: scoreLabel.value,
       });
     });
 
+    player.onCollide('previous-level', () => {
+      go("game", {
+        level: (level - 1),
+        score: scoreLabel.value,
+      });
+    });
+
+    // Ramasser objets
     player.onCollide('bomb', (b) => {
+      addBomb();
       destroy(b);
-      numberOfBombs++;
+      
       
     })
 
     player.onCollide('key', (k) => {
+      addKey();
       destroy(k)
-      numberOfKeys++;
+      
       
     })
-
+    // Détruire ennemis
     onCollide('boom', 'skeleton', (b,s) => {
+      
+      wait(1, () => {
+        destroy(b)
+      })
+      destroy(s)
+      scoreLabel.value++
+      scoreLabel.text = scoreLabel.value
+    })
+
+    onCollide('boom', 'snake', (b,s) => {
       
       wait(1, () => {
         destroy(b)
