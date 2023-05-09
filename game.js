@@ -31,23 +31,24 @@ loadSprite("sword-sheet", "sprites/sword-sheet.png", {
 
 loadSprite('skeleton', 'sprites/skeleton.png');
 loadSprite('block', 'sprites/block.png');
-loadSprite('bg', 'sprites/bg.png')
-loadSprite('locked-door1', 'sprites/locked-door1.png')
-loadSprite('locked-door2', 'sprites/locked-door2.png')
-loadSprite('left-statue', 'sprites/left-statue.png')
-loadSprite('right-statue', 'sprites/right-statue.png')
-loadSprite('downstairs', 'sprites/downstairs.png')
-loadSprite('upstairs', 'sprites/upstairs.png')
-loadSprite('slicer', 'sprites/slicer.png')
-loadSprite('key', 'sprites/key.png')
-loadSprite('bomb', 'sprites/bomb.png')
-loadSprite('boom', 'sprites/boom.png')
-loadSprite('snake', 'sprites/snake.png')
-loadSprite('sword', 'sprites/sword.png')
+loadSprite('bg', 'sprites/bg.png');
+loadSprite('locked-door1', 'sprites/locked-door1.png');
+loadSprite('locked-door2', 'sprites/locked-door2.png');
+loadSprite('left-statue', 'sprites/left-statue.png');
+loadSprite('right-statue', 'sprites/right-statue.png');
+loadSprite('downstairs', 'sprites/downstairs.png');
+loadSprite('upstairs', 'sprites/upstairs.png');
+loadSprite('slicer', 'sprites/slicer.png');
+loadSprite('key', 'sprites/key.png');
+loadSprite('bomb', 'sprites/bomb.png');
+loadSprite('boom', 'sprites/boom.png');
+loadSprite('snake', 'sprites/snake.png');
+loadSprite('bombable-block', 'sprites/bombable-block.png');
 
 
 
-scene("game", ({ level, score }) => {
+
+scene("game", ({ level, score, numBombs, numKeys }) => {
   layers(["bg", "obj", "ui"], "obj");
 
 
@@ -63,7 +64,7 @@ scene("game", ({ level, score }) => {
       'a  a      > a  a',
       'a  a    }   a  a',
       'a  a        a  |',
-      'a  a        a  )',
+      'b  a        a  )',
       'a  a        a  a',
       'a  a        a  a',
       'a  a}       a  a',
@@ -86,7 +87,7 @@ scene("game", ({ level, score }) => {
       'a  a        a  a',
       'a  a       $a  a',
       'a  aa      aa  a',
-      'a              a',
+      'a    x         a',
       'a          è   a',
       'a&            @a',
       'aaaaaaaaaaaaaaaa',
@@ -101,6 +102,7 @@ scene("game", ({ level, score }) => {
     width: 16,
     height: 16,
     'a': () => [sprite('block'), 'wall', area(), solid()],
+    'b': () => [sprite('bombable-block'), 'wall', area(), solid()],
     '}': () => [sprite('skeleton'), 'skeleton', 'dangerous', area(), solid(), { dir: -1, timer: 0 }],
     'x': () => [sprite('bomb'), area(), solid(), 'bomb'],
     'k': () => [sprite('key'), area(), solid(), 'key'],
@@ -229,9 +231,9 @@ scene("game", ({ level, score }) => {
     wait(0.2, () => {
       attacking = false;
       if (player.frame === 13) {
-        player.frame = 13; // Revenir à la frame 13 (regardant vers le haut)
+        player.frame = 13; // Go back to frame 13 (player look up)
       } else if (player.frame === 12) {
-        player.frame = 12; // Revenir à la frame 12 (regardant vers le bas)
+        player.frame = 12; // Go back to frame 12 (player look down)
       } else {
         player.frame = player.dir.x === 1 ? 14 : 15;
       }
@@ -242,28 +244,38 @@ scene("game", ({ level, score }) => {
     });
   }
   
-  
-
   onKeyPress('space', () => { // bind to the space key
   if (!attacking) { // only attack if not already attacking
     attack(); 
   }
 })
 
-  
+  function dropBomb(p) {
+    const bomb = add([sprite('bomb'), pos(p), area(), 'bomb'])
+    wait(1, () => {
+      destroy(bomb)
+    })
+  }
+
+  onKeyPress('b', () => {
+    if (numBombs >= 1) {
+      dropBomb(player.pos.add(player.dir.scale(12)))
+    }
+    
+  })
  
-  /*function spawnKaboom(p) {
+  function spawnFire(p) {
     const obj = add([sprite('boom'), pos(p), area(), 'boom'])
     wait(1, () => {
       destroy(obj)
     })
   }
 
-  onKeyPress('space', () => {
-    spawnKaboom(player.pos.add(player.dir.scale(12)))
-  })*/
+  onKeyPress('z', () => {
+    spawnFire(player.pos.add(player.dir.scale(12)))
+  })
 
-  // Picking items
+  // Items functions
 
   function addKey() {
     numKeys++;
@@ -291,7 +303,7 @@ scene("game", ({ level, score }) => {
 
   player.onCollide('locked-door1', () => {
 
-    if (numKeys = 0) {
+    if (numKeys === 0) {
       add([
         text('You need a key to open that door'),
         pos(20, 200)
@@ -336,8 +348,8 @@ scene("game", ({ level, score }) => {
     go("game", {
       level: (level + 1),
       score: scoreLabel.value,
-      numBombs: bombsLabel.value,
-      numKeys: keysLabel.value,
+      numBombs: numBombs,
+      numKeys: numKeys,
     });
   });
 
@@ -345,12 +357,12 @@ scene("game", ({ level, score }) => {
     go("game", {
       level: (level - 1),
       score: scoreLabel.value,
-      numBombs: bombsLabel.value,
-      numKeys: keysLabel.value,
+      numBombs: numBombs,
+      numKeys: numKeys,
     });
   });
 
-  // Ramasser objets
+  // Picking items
   player.onCollide('bomb', (b) => {
     addBomb();
     destroy(b);
@@ -364,8 +376,8 @@ scene("game", ({ level, score }) => {
 
 
   })
-  // Détruire ennemis
-  /*onCollide('boom', 'skeleton', (b, s) => {
+  // Destroy enemies
+  onCollide('boom', 'skeleton', (b, s) => {
 
     wait(1, () => {
       destroy(b)
@@ -373,7 +385,7 @@ scene("game", ({ level, score }) => {
     destroy(s)
     scoreLabel.value++
     scoreLabel.text = scoreLabel.value
-  })*/
+  })
 
   onCollide('sword', 'skeleton', (w, s) => {
 
@@ -385,7 +397,7 @@ scene("game", ({ level, score }) => {
     scoreLabel.text = scoreLabel.value
   })
 
-  /*onCollide('boom', 'snake', (b, s) => {
+  onCollide('boom', 'snake', (b, s) => {
 
     wait(1, () => {
       destroy(b)
@@ -393,7 +405,7 @@ scene("game", ({ level, score }) => {
     destroy(s)
     scoreLabel.value++
     scoreLabel.text = scoreLabel.value
-  })*/
+  })
 
   onCollide('sword', 'snake', (w, s) => {
 
@@ -426,4 +438,4 @@ scene("lose", () => {
 });
 
 
-go("game", { level: 0, score: 0, numBombs: 0, numKeys: 0 });
+go("game", { level: 0, score: 0, numBombs: numBombs, numKeys: numKeys });
