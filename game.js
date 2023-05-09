@@ -44,6 +44,7 @@ loadSprite('bomb', 'sprites/bomb.png');
 loadSprite('boom', 'sprites/boom.png');
 loadSprite('snake', 'sprites/snake.png');
 loadSprite('bombable-block', 'sprites/bombable-block.png');
+loadSprite('oldman', 'sprites/oldman.png');
 
 
 
@@ -93,6 +94,25 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
       'aaaaaaaaaaaaaaaa',
 
     ],
+    [
+
+      'aaaaaaaaaaaaaaaa',
+      'a&            @a',
+      'a              a',
+      'a              a',
+      'a  aaaaaaaaaa  a',
+      'a  a        a  a',
+      'a  a    o   a  a',
+      '   aa      aa  a',
+      'a              a',
+      'a              a',
+      'a              a',
+      'a              a',
+      'a              a',
+      'a&            @a',
+      'aaaaaaaaaaaaaaaa',
+
+    ],
   ];
 
 
@@ -114,6 +134,7 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     '@': () => [sprite("right-statue"), area(), solid()],
     '<': () => [sprite("upstairs"), area(), 'previous-level'],
     '>': () => [sprite("downstairs"), area(), 'next-level'],
+    'o': () => [sprite("oldman"), area()],
 
 
   }
@@ -250,8 +271,8 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
   }
 })
 
-  function dropBomb(p) {
-    const bomb = add([sprite('bomb'), pos(p), area(), 'bomb'])
+  function dropBomb(playerPos) {
+    const bomb = add([sprite('bomb'), pos(playerPos), area(), 'bomb'])
     wait(1, () => {
       destroy(bomb)
     })
@@ -308,6 +329,11 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
         text('You need a key to open that door'),
         pos(20, 200)
       ])
+    } else if (numKeys >= 0) {
+      add([
+        text('You are allowed to enter'),
+        pos(20, 200)
+      ]) 
     }
   })
 
@@ -438,4 +464,4 @@ scene("lose", () => {
 });
 
 
-go("game", { level: 0, score: 0, numBombs: numBombs, numKeys: numKeys });
+go("game", { level: 2, score: 0, numBombs: numBombs, numKeys: numKeys });
