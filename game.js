@@ -45,6 +45,8 @@ loadSprite('boom', 'sprites/boom.png');
 loadSprite('snake', 'sprites/snake.png');
 loadSprite('bombable-block', 'sprites/bombable-block.png');
 loadSprite('oldman', 'sprites/oldman.png');
+loadSprite('door-open', 'sprites/black.png');
+loadSprite('exit', 'sprites/black.png');
 
 
 
@@ -63,7 +65,7 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
       'a    x         a',
       'a              a',
       'a  a      > a  a',
-      'a  a    }   a  a',
+      'ak a    }   a  a',
       'a  a        a  |',
       'b  a        a  )',
       'a  a        a  a',
@@ -103,8 +105,8 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
       'a  aaaaaaaaaa  a',
       'a  a        a  a',
       'a  a    o   a  a',
-      '   aa      aa  a',
-      'a              a',
+      'e  aa      aa  a',
+      'e              a',
       'a              a',
       'a              a',
       'a              a',
@@ -134,7 +136,9 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     '@': () => [sprite("right-statue"), area(), solid()],
     '<': () => [sprite("upstairs"), area(), 'previous-level'],
     '>': () => [sprite("downstairs"), area(), 'next-level'],
-    'o': () => [sprite("oldman"), area()],
+    'o': () => [sprite("oldman"), area(), 'oldman'],
+    '#': () => [sprite("door-open"), area(), 'go-locked-room'],
+    'e': () => [sprite("exit"), area(), 'back-main-level'],
 
 
   }
@@ -320,23 +324,6 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     bombsLabel.text = 'Bombs : ' + numBombs;
   }
 
-  // Open door 
-
-  player.onCollide('locked-door1', () => {
-
-    if (numKeys === 0) {
-      add([
-        text('You need a key to open that door'),
-        pos(20, 200)
-      ])
-    } else if (numKeys >= 0) {
-      add([
-        text('You are allowed to enter'),
-        pos(20, 200)
-      ]) 
-    }
-  })
-
   // Enemies
 
   onUpdate('slicer', (s) => {
@@ -366,9 +353,82 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     }
   });
 
+  /*
+  ------------------
+  COLLISIONS
+  ------------------
+  */
+
+  // Open door 
+
+  player.onCollide('locked-door1', (l) => {
+  if (numKeys > 0) {
+    l.use(sprite('door-open')),
+    removeKey(),
+    go("game", {
+      level: 2, // go level 2
+      score: scoreLabel.value,
+      numBombs: numBombs,
+      numKeys: numKeys,
+    });
+  } else {
+    // Player doesn't have the key to open the doom
+    // Add a logic here to display a message or do another action
+    const textObject = add([
+        pos(20, 180),
+        text("The door is locked. Find a key.", {
+            size: 12, // 12 pixels tall
+            width: 150, // it'll wrap to next line when width exceeds this value
+            font: "sinko", // there're 4 built-in fonts: "apl386", "apl386o", "sink", and "sinko"
+        })
+        
+      ]);
+      wait(1, () => {
+        destroy(textObject);
+      });  
+  }
+});
 
 
-  // Collisions
+  /*player.onCollide('locked-door1', (l) => {
+
+    if (numKeys === 0) {
+      const textObject = add([
+        pos(20, 180),
+        text("The door is locked. Find a key, connard.", {
+            size: 12, // 12 pixels tall
+            width: 150, // it'll wrap to next line when width exceeds this value
+            font: "sinko", // there're 4 built-in fonts: "apl386", "apl386o", "sink", and "sinko"
+        })
+        
+      ]);
+      wait(1, () => {
+        destroy(textObject);
+      });  
+    } else if (numKeys >= 0) {
+      l.use(sprite('door-open'))
+      
+    }
+  })*/
+
+  // Old Man 
+
+  player.onCollide('oldman', () => {
+    const textObject = add([
+      pos(20, 180),
+      text("Hahah, wrong way son ! Have you found a bomb ?", {
+          size: 12, // 12 pixels tall
+          width: 150, // it'll wrap to next line when width exceeds this value
+          font: "sinko", // there're 4 built-in fonts: "apl386", "apl386o", "sink", and "sinko"
+      }),
+    ]);
+    
+    wait(1, () => {
+      destroy(textObject);
+    });
+  })
+
+  // Change level
 
   player.onCollide('next-level', () => {
     go("game", {
@@ -379,9 +439,28 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     });
   });
 
+  player.onCollide('go-locked-room', () => {
+    go("game", {
+      level: (level + 2),
+      score: scoreLabel.value,
+      numBombs: numBombs,
+      numKeys: numKeys,
+    });
+    removeKey();
+  });
+
   player.onCollide('previous-level', () => {
     go("game", {
       level: (level - 1),
+      score: scoreLabel.value,
+      numBombs: numBombs,
+      numKeys: numKeys,
+    });
+  });
+
+  player.onCollide('back-main-level', () => {
+    go("game", {
+      level: (level - 2),
       score: scoreLabel.value,
       numBombs: numBombs,
       numKeys: numKeys,
@@ -464,4 +543,4 @@ scene("lose", () => {
 });
 
 
-go("game", { level: 2, score: 0, numBombs: numBombs, numKeys: numKeys });
+go("game", { level: 0, score: 0, numBombs: numBombs, numKeys: numKeys });
