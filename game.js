@@ -45,6 +45,7 @@ loadSprite('boom', 'sprites/boom.png');
 loadSprite('snake', 'sprites/snake.png');
 loadSprite('bombable-block', 'sprites/bombable-block.png');
 loadSprite('oldman', 'sprites/oldman.png');
+loadSprite('hole', 'sprites/black.png')
 loadSprite('door-open', 'sprites/black.png');
 loadSprite('exit', 'sprites/black.png');
 
@@ -66,7 +67,7 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
       'a              a',
       'a  a      > a  a',
       'ak a    }   a  a',
-      'a  a        a  |',
+      'b  a        a  |',
       'b  a        a  )',
       'a  a        a  a',
       'a  a        a  a',
@@ -124,7 +125,7 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     width: 16,
     height: 16,
     'a': () => [sprite('block'), 'wall', area(), solid()],
-    'b': () => [sprite('bombable-block'), 'wall', area(), solid()],
+    'b': () => [sprite('bombable-block'), area(), solid(), 'bombable-block'],
     '}': () => [sprite('skeleton'), 'skeleton', 'dangerous', area(), solid(), { dir: -1, timer: 0 }],
     'x': () => [sprite('bomb'), area(), solid(), 'bomb'],
     'k': () => [sprite('key'), area(), solid(), 'key'],
@@ -139,6 +140,7 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     'o': () => [sprite("oldman"), area(), 'oldman'],
     '#': () => [sprite("door-open"), area(), 'go-locked-room'],
     'e': () => [sprite("exit"), area(), 'back-main-level'],
+    '*': () => [sprite("hole"), area(), 'final-level'],
 
 
   }
@@ -275,11 +277,16 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
   }
 })
 
-  function dropBomb(playerPos) {
-    const bomb = add([sprite('bomb'), pos(playerPos), area(), 'bomb'])
-    wait(1, () => {
-      destroy(bomb)
+  function dropBomb() {
+    const bomb = add([sprite('bomb'), pos(player.pos), area(), 'bomb']);
+    
+    wait(2, () => {
+      destroy(bomb);
+      explodeBomb();
+      
+      
     })
+    removeBomb();
   }
 
   onKeyPress('b', () => {
@@ -288,6 +295,27 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
     }
     
   })
+
+  
+
+  function explodeBomb() {
+    const explosionPos = player.pos;
+
+    // Spawn explosion sprite
+    const explosion = add([sprite('boom'), pos(explosionPos), area()]);
+
+    // Destroy the bomb and the explosion sprite after a certain time
+    wait(1, () => {
+      
+      destroy(explosion);
+    });
+    // Destroy the bombable-block if it collides with the explosion
+    explosion.onCollide('bombable-block', (e) => {
+      e.use(sprite('hole'));
+    });
+    
+
+  }
  
   function spawnFire(p) {
     const obj = add([sprite('boom'), pos(p), area(), 'boom'])
@@ -390,26 +418,6 @@ scene("game", ({ level, score, numBombs, numKeys }) => {
 });
 
 
-  /*player.onCollide('locked-door1', (l) => {
-
-    if (numKeys === 0) {
-      const textObject = add([
-        pos(20, 180),
-        text("The door is locked. Find a key, connard.", {
-            size: 12, // 12 pixels tall
-            width: 150, // it'll wrap to next line when width exceeds this value
-            font: "sinko", // there're 4 built-in fonts: "apl386", "apl386o", "sink", and "sinko"
-        })
-        
-      ]);
-      wait(1, () => {
-        destroy(textObject);
-      });  
-    } else if (numKeys >= 0) {
-      l.use(sprite('door-open'))
-      
-    }
-  })*/
 
   // Old Man 
 
